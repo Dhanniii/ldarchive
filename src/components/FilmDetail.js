@@ -37,7 +37,8 @@ const FilmDetail = () => {
         const fetchFilm = async () => {
             try {
                 const apiKey = process.env.REACT_APP_OMDB_API_KEY;
-                let url = `http://www.omdbapi.com/?t=${encodeURIComponent(originalTitle)}&apikey=${apiKey}`;
+                // Change http to https
+                let url = `https://www.omdbapi.com/?t=${encodeURIComponent(originalTitle)}&apikey=${apiKey}`;
                 if (year) url += `&y=${year}`;
                 const response = await fetch(url);
                 const data = await response.json();
