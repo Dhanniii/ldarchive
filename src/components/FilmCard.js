@@ -95,15 +95,9 @@ const FilmCard = ({ film }) => {
                     <div className="synopsis">
                         {film.synopsis}
                     </div>
-                    <div style={{ 
-                        textAlign: 'center', 
-                        marginTop: '20px', 
-                        color: '#fff',
-                        fontSize: '0.85rem',  // Make text smaller
-                        opacity: 0.8         // Optional: makes text slightly subtle
-                    }}>
-                        Click again to view details
-                    </div>
+                    <button className="view-details-btn">
+                        Download
+                    </button>
                 </div>
             </div>
         </div>
