@@ -5,8 +5,10 @@ import '../styles/components.css';
 const FilmCard = ({ film }) => {
     const navigate = useNavigate();
     const [flipped, setFlipped] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
     const timerRef = useRef(null);
     const clickCountRef = useRef(0);
+    const cardRef = useRef(null);
 
     const handleCardClick = () => {
         clickCountRef.current += 1;
@@ -40,8 +42,35 @@ const FilmCard = ({ film }) => {
         navigate(`/movies/${encodeURIComponent(film.title)}`);
     };
 
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // Set isVisible based on current intersection state
+                setIsVisible(entry.isIntersecting);
+            },
+            {
+                threshold: 0.1,
+                rootMargin: '50px' // Trigger slightly before element comes into view
+            }
+        );
+
+        if (cardRef.current) {
+            observer.observe(cardRef.current);
+        }
+
+        return () => {
+            if (cardRef.current) {
+                observer.unobserve(cardRef.current);
+            }
+        };
+    }, []);
+
     return (
-        <div className={`movie-card${flipped ? ' flipped' : ''}`} onClick={handleCardClick}>
+        <div 
+            ref={cardRef}
+            className={`movie-card${flipped ? ' flipped' : ''} ld-fade${isVisible ? ' show' : ''}`} 
+            onClick={handleCardClick}
+        >
             <div className={`card-inner${flipped ? ' flipped' : ''}`}>
                 <div className="card-front">
                     <img src={film.banner} alt={film.title} className="movie-poster" />
@@ -66,7 +95,13 @@ const FilmCard = ({ film }) => {
                     <div className="synopsis">
                         {film.synopsis}
                     </div>
-                    <div style={{ textAlign: 'center', marginTop: '20px', color: '#fff' }}>
+                    <div style={{ 
+                        textAlign: 'center', 
+                        marginTop: '20px', 
+                        color: '#fff',
+                        fontSize: '0.85rem',  // Make text smaller
+                        opacity: 0.8         // Optional: makes text slightly subtle
+                    }}>
                         Click again to view details
                     </div>
                 </div>

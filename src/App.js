@@ -20,7 +20,22 @@ const FilmPage = () => {
   const { page } = useParams();
   const [activeGenre, setActiveGenre] = useState('All');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [showPopup, setShowPopup] = useState(true);
+  const [showPopup, setShowPopup] = useState(() => {
+    const stored = localStorage.getItem('hideWelcomePopup');
+    if (!stored) return true;
+    
+    try {
+        const { value, expires } = JSON.parse(stored);
+        if (new Date().getTime() > expires) {
+            localStorage.removeItem('hideWelcomePopup');
+            return true;
+        }
+        return !value;
+    } catch (e) {
+        localStorage.removeItem('hideWelcomePopup');
+        return true;
+    }
+  });
   const [showChatBox, setShowChatBox] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [chatSent, setChatSent] = useState(false);
@@ -29,9 +44,10 @@ const FilmPage = () => {
   const [films, setFilms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSubtitleInfo, setShowSubtitleInfo] = useState(false);
-  const currentPage = parseInt(page) || 1;
+  const [totalFilms, setTotalFilms] = useState(0);
   const filmsPerPage = 20;
   const lastScroll = useRef(window.scrollY);
+  const currentPage = parseInt(page) || 1;
 
   // Update the genres array to match exactly with your MongoDB data
   const genres = [
@@ -46,21 +62,27 @@ const FilmPage = () => {
   ];
 
   useEffect(() => {
-    fetch(process.env.REACT_APP_API_URL, {
-      headers: {
-        'Authorization': `Bearer ${process.env.REACT_APP_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(res => {
-        if (!res.ok) {
+    const fetchFilms = async () => {
+      setLoading(true);
+      try {
+        // Only add random parameter for page 1
+        const response = await fetch(
+          `${process.env.REACT_APP_API_URL}?page=${currentPage}&limit=${filmsPerPage}`, 
+          {
+            headers: {
+              'Authorization': `Bearer ${process.env.REACT_APP_API_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (!response.ok) {
           throw new Error('API authorization failed');
         }
-        return res.json();
-      })
-      .then(data => {
+
+        const data = await response.json();
+        
         if (data.films) {
-          // Transform and shuffle the films
           const transformedFilms = data.films.map(film => ({
             title: film.title,
             year: film.year.toString(),
@@ -70,23 +92,28 @@ const FilmPage = () => {
             genres: Array.isArray(film.genres) ? film.genres : [film.genres],
             downloadLink: film.downloadLink
           }));
-          // Shuffle the films array before setting state
-          setFilms(shuffleArray([...transformedFilms]));
+          
+          setFilms(transformedFilms);
+          setTotalFilms(data.total || 0);
         }
-        setLoading(false);
-      })
-      .catch(err => {
+      } catch (err) {
         console.error("Failed to fetch films:", err);
         setFilms([]);
+      } finally {
         setLoading(false);
-      });
-  }, []); // Fetch only once when component mounts
+      }
+    };
 
-  // Filter films based on genre and search
+    fetchFilms();
+  }, [currentPage]); // Refetch when page changes
+
+  // Update pagination logic
+  const totalPages = Math.ceil(totalFilms / filmsPerPage);
+
+  // Update filtered films logic
   const filteredFilms = activeGenre === 'All' 
     ? films 
     : films.filter(film => {
-        // Convert both to lowercase for comparison
         const filmGenres = film.genres.map(g => g.toLowerCase());
         return filmGenres.includes(activeGenre.toLowerCase());
       });
@@ -95,11 +122,8 @@ const FilmPage = () => {
     film.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination logic
-  const indexOfLastFilm = currentPage * filmsPerPage;
-  const indexOfFirstFilm = indexOfLastFilm - filmsPerPage;
-  const currentFilms = searchedFilms.slice(indexOfFirstFilm, indexOfLastFilm);
-  const totalPages = Math.ceil(searchedFilms.length / filmsPerPage);
+  // Remove the slice logic since we're now paginating on the server
+  const currentFilms = searchedFilms;
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
@@ -108,18 +132,31 @@ const FilmPage = () => {
   const handlePreviousPage = () => {
     if (currentPage > 1) {
       navigate(`/page/${currentPage - 1}`);
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       navigate(`/page/${currentPage + 1}`);
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  const handleClosePopup = () => setShowPopup(false);
+  const handleClosePopup = () => {
+    setShowPopup(false);
+  };
+
+  const handleDontShowAgain = () => {
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + 1); // Set expiry to 1 hour from now
+    
+    localStorage.setItem('hideWelcomePopup', JSON.stringify({
+        value: true,
+        expires: expiryDate.getTime()
+    }));
+    setShowPopup(false);
+  };
 
   // Add snow effect
   useEffect(() => {
@@ -246,9 +283,18 @@ const FilmPage = () => {
                 Better to use <b>VLC Media Player</b> or <b>MxPlayer</b> since some movies already include subtitles.<br /><br />
                 This website was created just for fun; all movies here are download-only and we only provide 1080p or 720p quality. These Movie are all sourced from piracy websites found across the internet.<br /><br />
                 My purpose in creating this is so you don't have to go through shortlinks when downloading movies.<br /><br />
-                <b>Sorry if the movie you're looking for isn't available</b>, due to my limited storage capacity. If you want to request a specific movie, you can reach out through the Contact & Request <br /><br />
+                <b>Sorry if the movie you're looking for isn't available</b>, If you want to request a specific movie, you can reach out through the Contact & Request <br /><br />
                 Thank you
               </p>
+              <div className="popup-actions">
+                <label className="dont-show-again">
+                  <input 
+                    type="checkbox" 
+                    onChange={handleDontShowAgain}
+                  />
+                  <span>Don't show this again</span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
