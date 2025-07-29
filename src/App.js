@@ -6,6 +6,7 @@ import SnowEffect from './components/SnowEffect';
 import Preloader from './components/Preloader';
 import HelloWorld from './components/HelloWorld';
 import FilmDetail from './components/FilmDetail';
+import SearchResults from './components/SearchResults';
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -48,6 +49,10 @@ const FilmPage = () => {
   const filmsPerPage = 20;
   const lastScroll = useRef(window.scrollY);
   const currentPage = parseInt(page) || 1;
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Update the genres array to match exactly with your MongoDB data
   const genres = [
@@ -118,12 +123,13 @@ const FilmPage = () => {
         return filmGenres.includes(activeGenre.toLowerCase());
       });
 
-  const searchedFilms = filteredFilms.filter(film =>
-    film.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   // Remove the slice logic since we're now paginating on the server
-  const currentFilms = searchedFilms;
+  const currentFilms = activeGenre === 'All' 
+    ? films 
+    : films.filter(film => {
+        const filmGenres = film.genres.map(g => g.toLowerCase());
+        return filmGenres.includes(activeGenre.toLowerCase());
+      });
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
@@ -149,7 +155,7 @@ const FilmPage = () => {
 
   const handleDontShowAgain = () => {
     const expiryDate = new Date();
-    expiryDate.setHours(expiryDate.getHours() + 1); // Set expiry to 1 hour from now
+    expiryDate.setHours(expiryDate.getHours() + 1); 
     
     localStorage.setItem('hideWelcomePopup', JSON.stringify({
         value: true,
@@ -353,7 +359,16 @@ const FilmPage = () => {
 
       <main className={`main-content ${isSidebarOpen ? 'shifted' : ''}`}>
         <div className="topbar">
-          <div className="search-wrapper">
+          <form 
+            className="search-wrapper"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (searchTerm.trim()) {
+                navigate(`/search/${encodeURIComponent(searchTerm.trim())}`);
+                setSearchTerm(''); // Clear search input after submission
+              }
+            }}
+          >
             <span className="search-icon">
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="9" cy="9" r="7"/>
@@ -362,13 +377,13 @@ const FilmPage = () => {
             </span>
             <input
               className="search-input"
-              type="text"
+              type="search"
               placeholder="Search movie..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               maxLength={40}
             />
-          </div>
+          </form>
         </div>
 
         <div className="film-grid">
@@ -407,6 +422,16 @@ const FilmPage = () => {
           © 2024–2025  LdArchive
 
         </div>
+
+        {/* Search Results Component - Conditionally rendered */}
+        {showSearchResults && (
+          <SearchResults
+            searchResults={searchResults}
+            searchQuery={searchQuery}
+            onBackClick={() => setShowSearchResults(false)}
+            handleCardClick={handleMovieClick}
+          />
+        )}
       </main>
 
       {/* Chat Floating Button & Box */}
@@ -467,7 +492,8 @@ const App = () => {
       <Routes>
         <Route path="/" element={<FilmPage />} />
         <Route path="/page/:page" element={<FilmPage />} />
-        <Route path="/movies/:title" element={<FilmDetail />} /> {/* ubah di sini */}
+        <Route path="/movies/:title" element={<FilmDetail />} />
+        <Route path="/search/:query" element={<SearchResults />} />
       </Routes>
     </Router>
   );

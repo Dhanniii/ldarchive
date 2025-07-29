@@ -6,52 +6,25 @@ const FilmCard = ({ film }) => {
     const navigate = useNavigate();
     const [flipped, setFlipped] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
-    const timerRef = useRef(null);
-    const clickCountRef = useRef(0);
     const cardRef = useRef(null);
 
+    // Handle only card flip
     const handleCardClick = () => {
-        clickCountRef.current += 1;
-        
-        if (clickCountRef.current === 1) {
-            setFlipped(true);
-            if (timerRef.current) clearTimeout(timerRef.current);
-            timerRef.current = setTimeout(() => {
-                setFlipped(false);
-                clickCountRef.current = 0;
-            }, 5000);
-        } else if (clickCountRef.current === 2) {
-            navigate(`/movies/${film.title}`, { state: { originalTitle: film.title, year: film.year } });
-            clickCountRef.current = 0;
-        }
+        setFlipped(!flipped);
     };
 
-    // Modified validation - check for required fields
-    if (!film || !film.title || !film.banner) {
-        console.error('Film card received invalid film data:', film);
-        return null;
-    }
-
-    useEffect(() => {
-        return () => {
-            if (timerRef.current) clearTimeout(timerRef.current);
-        };
-    }, []);
-
-    const handleViewDetail = (film) => {
+    // Separate handler for download button
+    const handleDownloadClick = (e) => {
+        e.stopPropagation(); // Prevent card flip
         navigate(`/movies/${encodeURIComponent(film.title)}`);
     };
 
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
-                // Set isVisible based on current intersection state
                 setIsVisible(entry.isIntersecting);
             },
-            {
-                threshold: 0.1,
-                rootMargin: '50px' // Trigger slightly before element comes into view
-            }
+            { threshold: 0.1 }
         );
 
         if (cardRef.current) {
@@ -95,15 +68,12 @@ const FilmCard = ({ film }) => {
                     <div className="synopsis">
                         {film.synopsis}
                     </div>
-                    <div style={{ 
-                        textAlign: 'center', 
-                        marginTop: '20px', 
-                        color: '#fff',
-                        fontSize: '0.85rem',  // Make text smaller
-                        opacity: 0.8         // Optional: makes text slightly subtle
-                    }}>
-                        Click again to view details
-                    </div>
+                    <button 
+                        className="view-details-btn"
+                        onClick={handleDownloadClick}
+                    >
+                        Download
+                    </button>
                 </div>
             </div>
         </div>
