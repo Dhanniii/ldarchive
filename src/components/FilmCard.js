@@ -102,7 +102,7 @@ const FilmCard = ({ film }) => {
                         fontSize: '0.85rem',  // Make text smaller
                         opacity: 0.8         // Optional: makes text slightly subtle
                     }}>
-                        Click again to view details
+                        view details
                     </div>
                 </div>
             </div>
