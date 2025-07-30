@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { HashRouter as Router, Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import FilmCard from './components/FilmCard';
 import EndlessBackground from './components/EndlessBackground';
 import SnowEffect from './components/SnowEffect';
@@ -148,14 +148,22 @@ const FilmPage = () => {
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
-      navigate(`/page/${currentPage - 1}`);
+      if (genreName) {
+        navigate(`/genre/${genreName}/page/${currentPage - 1}`);
+      } else {
+        navigate(`/page/${currentPage - 1}`);
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
-      navigate(`/page/${currentPage + 1}`);
+      if (genreName) {
+        navigate(`/genre/${genreName}/page/${currentPage + 1}`);
+      } else {
+        navigate(`/page/${currentPage + 1}`);
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -282,6 +290,8 @@ const FilmPage = () => {
     // eslint-disable-next-line
   }, [currentPage, genreName, films]);
 
+  console.log(`Total Films: ${totalFilms}, Total Pages: ${totalPages}, Current Page: ${currentPage}, Films Per Page: ${filmsPerPage}`);
+
   if (loading) return <Preloader />;
 
   return (
@@ -343,14 +353,17 @@ const FilmPage = () => {
               className={`genre-item ${activeGenre.toLowerCase() === genre.name.toLowerCase() ? 'active' : ''}`}
               onClick={() => {
                 setActiveGenre(genre.name);
-                navigate(`/genre/${genre.name.toLowerCase()}`);
+                if (genre.name === 'All') {
+                  navigate('/');
+                } else {
+                  navigate(`/genre/${genre.name.toLowerCase()}`);
+                }
                 if (window.innerWidth <= 768) {
                   setSidebarOpen(false);
                 }
               }}
             >
               <span className="genre-icon">{genre.icon}</span>
-              {/* Capitalize first letter for display */}
               {genre.name === 'All' ? genre.name : genre.name.charAt(0).toUpperCase() + genre.name.slice(1)}
             </li>
           ))}
@@ -370,8 +383,9 @@ const FilmPage = () => {
             <div className="subtitle-content">
               <p>
                 No subtitles? Sorry about that! You can grab them from&nbsp;
-                <a href="https://subsource.net" target="_blank" rel="noopener noreferrer">subsource.net</a>
-                &nbsp;
+                <a href="https://subsource.net" target="_blank" rel="noopener noreferrer">https://subsource.net</a>
+                &nbsp;or&nbsp;
+                <a href="https://subdl.com" target="_blank" rel="noopener noreferrer">subdl.com</a>
               </p>
             </div>
           )}
@@ -416,9 +430,9 @@ const FilmPage = () => {
           ))}
         </div>
 
-        {totalPages > 1 && (
+        {totalFilms > filmsPerPage && (
           <div className="pagination">
-            <button 
+            <button
               className="pagination-button"
               onClick={handlePreviousPage}
               disabled={currentPage === 1}
@@ -426,12 +440,12 @@ const FilmPage = () => {
               ←
             </button>
             <span className="page-indicator">
-              {currentPage} / {totalPages}
+              {currentPage} / {Math.ceil(totalFilms / filmsPerPage)}
             </span>
-            <button 
+            <button
               className="pagination-button"
               onClick={handleNextPage}
-              disabled={currentPage === totalPages}
+              disabled={currentPage >= Math.ceil(totalFilms / filmsPerPage)}
             >
               →
             </button>
@@ -512,9 +526,10 @@ const App = () => {
       <Routes>
         <Route path="/" element={<FilmPage />} />
         <Route path="/page/:page" element={<FilmPage />} />
+        <Route path="/genre/:genreName" element={<FilmPage />} />
+        <Route path="/genre/:genreName/page/:page" element={<FilmPage />} />
         <Route path="/movies/:title" element={<FilmDetail />} />
         <Route path="/search/:query" element={<SearchResults />} />
-        <Route path="/genre/:genreName" element={<FilmPage />} />
       </Routes>
     </Router>
   );
