@@ -16,13 +16,19 @@ const FilmCard = ({ film }) => {
     // Separate handler for download button
     const handleDownloadClick = (e) => {
         e.stopPropagation(); // Prevent card flip
-        navigate(`/movies/${encodeURIComponent(film.title)}`);
+        navigate(`/movies/${encodeURIComponent(film.title)}`, {
+            state: { originalTitle: film.title, year: film.year }
+        });
     };
 
     useEffect(() => {
+        let isMounted = true; // Add mounted flag
         const observer = new IntersectionObserver(
             ([entry]) => {
-                setIsVisible(entry.isIntersecting);
+                // Only update state if component is still mounted
+                if (isMounted) {
+                    setIsVisible(entry.isIntersecting);
+                }
             },
             { threshold: 0.1 }
         );
@@ -31,7 +37,10 @@ const FilmCard = ({ film }) => {
             observer.observe(cardRef.current);
         }
 
+        // Cleanup function
         return () => {
+            isMounted = false; // Set flag to false on cleanup
+            observer.disconnect(); // Disconnect observer completely
             if (cardRef.current) {
                 observer.unobserve(cardRef.current);
             }

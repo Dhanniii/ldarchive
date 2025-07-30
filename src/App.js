@@ -4,21 +4,12 @@ import FilmCard from './components/FilmCard';
 import EndlessBackground from './components/EndlessBackground';
 import SnowEffect from './components/SnowEffect';
 import Preloader from './components/Preloader';
-import HelloWorld from './components/HelloWorld';
 import FilmDetail from './components/FilmDetail';
 import SearchResults from './components/SearchResults';
 
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
 const FilmPage = () => {
   const navigate = useNavigate();
-  const { page } = useParams();
+  const { page, genreName } = useParams();
   const [activeGenre, setActiveGenre] = useState('All');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [showPopup, setShowPopup] = useState(() => {
@@ -53,6 +44,7 @@ const FilmPage = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [shuffledFilms, setShuffledFilms] = useState([]);
 
   // Update the genres array to match exactly with your MongoDB data
   const genres = [
@@ -70,16 +62,22 @@ const FilmPage = () => {
     const fetchFilms = async () => {
       setLoading(true);
       try {
-        // Only add random parameter for page 1
-        const response = await fetch(
-          `${process.env.REACT_APP_API_URL}?page=${currentPage}&limit=${filmsPerPage}`, 
-          {
-            headers: {
-              'Authorization': `Bearer ${process.env.REACT_APP_API_KEY}`,
-              'Content-Type': 'application/json'
-            }
+        const url = new URL(`${process.env.REACT_APP_API_URL}`);
+        
+        // Add genre to query params if not "all"
+        if (genreName && genreName !== 'all') {
+          url.searchParams.append('genre', genreName);
+        }
+        url.searchParams.append('page', currentPage);
+        url.searchParams.append('limit', filmsPerPage);
+
+        // Fetch only movies for this genre
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${process.env.REACT_APP_API_KEY}`,
+            'Content-Type': 'application/json'
           }
-        );
+        });
 
         if (!response.ok) {
           throw new Error('API authorization failed');
@@ -110,7 +108,7 @@ const FilmPage = () => {
     };
 
     fetchFilms();
-  }, [currentPage]); // Refetch when page changes
+  }, [genreName, currentPage]); // Refetch when genre or page changes
 
   // Update pagination logic
   const totalPages = Math.ceil(totalFilms / filmsPerPage);
@@ -130,6 +128,19 @@ const FilmPage = () => {
         const filmGenres = film.genres.map(g => g.toLowerCase());
         return filmGenres.includes(activeGenre.toLowerCase());
       });
+
+  function getShuffled(arr) {
+    const array = [...arr];
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  const displayFilms = currentPage === 1 && shuffledFilms.length > 0
+    ? shuffledFilms
+    : currentFilms;
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);
@@ -261,6 +272,16 @@ const FilmPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (currentPage === 1) {
+      // Shuffle hanya sekali saat page/genre berubah
+      setShuffledFilms(getShuffled(currentFilms));
+    } else {
+      setShuffledFilms([]);
+    }
+    // eslint-disable-next-line
+  }, [currentPage, genreName, films]);
+
   if (loading) return <Preloader />;
 
   return (
@@ -322,6 +343,7 @@ const FilmPage = () => {
               className={`genre-item ${activeGenre.toLowerCase() === genre.name.toLowerCase() ? 'active' : ''}`}
               onClick={() => {
                 setActiveGenre(genre.name);
+                navigate(`/genre/${genre.name.toLowerCase()}`);
                 if (window.innerWidth <= 768) {
                   setSidebarOpen(false);
                 }
@@ -387,11 +409,10 @@ const FilmPage = () => {
         </div>
 
         <div className="film-grid">
-          {currentFilms.map((film, index) => (
+          {displayFilms.map((film, index) => (
             <FilmCard 
               key={film._id || index} 
-              film={film} 
-              onClick={() => navigate(`/movies/${encodeURIComponent(film.title)}`)} // Navigate to film detail
+              film={film}
             />
           ))}
         </div>
@@ -494,6 +515,7 @@ const App = () => {
         <Route path="/page/:page" element={<FilmPage />} />
         <Route path="/movies/:title" element={<FilmDetail />} />
         <Route path="/search/:query" element={<SearchResults />} />
+        <Route path="/genre/:genreName" element={<FilmPage />} />
       </Routes>
     </Router>
   );

@@ -21,6 +21,22 @@ const LoadingSpinner = () => (
     <div className="spinner"></div>
 );
 
+const SkeletonLoader = () => (
+    <div className="skeleton-loader">
+        <div className="skeleton-grid">
+            <div className="skeleton-poster"></div>
+            <div className="skeleton-content">
+                <div className="skeleton-title"></div>
+                <div className="skeleton-meta"></div>
+                <div className="skeleton-rating"></div>
+                <div className="skeleton-text"></div>
+                <div className="skeleton-text"></div>
+                <div className="skeleton-text"></div>
+            </div>
+        </div>
+    </div>
+);
+
 const FilmDetail = () => {
     const { title } = useParams();
     const location = useLocation();
@@ -39,7 +55,7 @@ const FilmDetail = () => {
                 const apiKey = process.env.REACT_APP_OMDB_API_KEY;
                 // Change http to https
                 let url = `https://www.omdbapi.com/?t=${encodeURIComponent(originalTitle)}&apikey=${apiKey}`;
-                if (year) url += `&y=${year}`;
+                if (year) url += `&y=${year}`; // Selalu tambahkan tahun jika ada
                 const response = await fetch(url);
                 const data = await response.json();
                 if (data.Response === "False") {
@@ -107,11 +123,7 @@ const FilmDetail = () => {
 
     const renderContent = () => {
         if (loading) {
-            return (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#fff', position: 'relative', zIndex: 3 }}>
-                    <div>Please wait... </div>
-                </div>
-            );
+            return <SkeletonLoader />;
         }
 
         if (error) {
