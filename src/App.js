@@ -370,7 +370,7 @@ const FilmPage = () => {
             <div className="subtitle-content">
               <p>
                 No subtitles? Sorry about that! You can grab them from&nbsp;
-                <a href="https://sub-scene.com" target="_blank" rel="noopener noreferrer">sub-scene.com</a>
+                <a href="https://subsource.net" target="_blank" rel="noopener noreferrer">subsource.net</a>
                 &nbsp;or&nbsp;
                 <a href="https://subdl.com" target="_blank" rel="noopener noreferrer">subdl.com</a>
               </p>
