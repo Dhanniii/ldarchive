@@ -81,22 +81,14 @@ const FilmDetail = () => {
                     throw new Error('API configuration is missing');
                 }
 
-                const response = await fetch(process.env.REACT_APP_API_URL, {
+                const url = `${process.env.REACT_APP_API_URL}/by-title?title=${encodeURIComponent(film.Title)}${film.Year ? `&year=${film.Year}` : ''}`;
+                const response = await fetch(url, {
                     headers: {
                         'Authorization': `Bearer ${process.env.REACT_APP_API_KEY}`,
                         'Content-Type': 'application/json'
                     }
                 });
-                const data = await response.json();
-
-                // Gunakan film.Title jika sudah ada, fallback ke originalTitle
-                const searchTitle = (film?.Title || originalTitle || "").toLowerCase().trim();
-
-                // Cari film yang judulnya sama persis (case-insensitive, trim)
-                const found = data.films?.find(f =>
-                    (f.title || "").toLowerCase().trim() === searchTitle &&
-                    (year ? String(f.year) === String(year) : true)
-                );
+                const found = await response.json();
 
                 // Mapping downloadOptions ke array tombol
                 let links = [];
@@ -125,6 +117,7 @@ const FilmDetail = () => {
         try {
             // Use the full API URL but add log-download to the films path
             const url = `${process.env.REACT_APP_API_URL}/log-download`;
+            console.log('Sending request to:', url); // Debug logfAWSdsef
             
             await fetch(url, {
                 method: 'POST',
