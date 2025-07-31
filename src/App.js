@@ -45,6 +45,7 @@ const FilmPage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [shuffledFilms, setShuffledFilms] = useState([]);
+  const sidebarRef = useRef(null); // Tambahkan ref untuk sidebar
 
   // Update the genres array to match exactly with your MongoDB data
   const genres = [
@@ -290,6 +291,22 @@ const FilmPage = () => {
     // eslint-disable-next-line
   }, [currentPage, genreName, films]);
 
+  // Fungsi untuk handle toggle subtitle
+  const handleSubtitleToggle = () => {
+    setShowSubtitleInfo(prev => {
+      const next = !prev;
+      setTimeout(() => {
+        if (next && sidebarRef.current) {
+          sidebarRef.current.scrollTo({
+            top: sidebarRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }, 200); // Delay agar konten sudah render
+      return next;
+    });
+  };
+
   if (loading) return <Preloader />;
 
   return (
@@ -335,7 +352,11 @@ const FilmPage = () => {
         </div>
       )}
 
-      <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+      <aside
+        className={`sidebar ${isSidebarOpen ? 'open' : ''}`}
+        ref={sidebarRef}
+        style={{ overflowY: 'auto', maxHeight: '100vh' }} // Pastikan sidebar bisa discroll
+      >
         <button 
           className="sidebar-toggle inside"
           onClick={() => setSidebarOpen(false)}
@@ -370,7 +391,7 @@ const FilmPage = () => {
         <div className="subtitle-info-wrapper">
           <button 
             className="subtitle-toggle" 
-            onClick={() => setShowSubtitleInfo(prev => !prev)}
+            onClick={handleSubtitleToggle}
             aria-expanded={showSubtitleInfo}
           >
             <span>Subtitles</span>
