@@ -37,7 +37,7 @@ const FilmPage = () => {
   const [loading, setLoading] = useState(true);
   const [showSubtitleInfo, setShowSubtitleInfo] = useState(false);
   const [totalFilms, setTotalFilms] = useState(0);
-  const filmsPerPage = 20;
+  const filmsPerPage = 30;
   const lastScroll = useRef(window.scrollY);
   const currentPage = parseInt(page) || 1;
   const [isSearching, setIsSearching] = useState(false);
