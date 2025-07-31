@@ -290,8 +290,6 @@ const FilmPage = () => {
     // eslint-disable-next-line
   }, [currentPage, genreName, films]);
 
-  console.log(`Total Films: ${totalFilms}, Total Pages: ${totalPages}, Current Page: ${currentPage}, Films Per Page: ${filmsPerPage}`);
-
   if (loading) return <Preloader />;
 
   return (
