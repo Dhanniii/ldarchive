@@ -125,7 +125,6 @@ const FilmDetail = () => {
         try {
             // Use the full API URL but add log-download to the films path
             const url = `${process.env.REACT_APP_API_URL}/log-download`;
-            console.log('Sending request to:', url); // Debug log
             
             await fetch(url, {
                 method: 'POST',
