@@ -121,6 +121,29 @@ const FilmDetail = () => {
         if (film) fetchDownloadLinks();
     }, [film]);
 
+    const handleDownloadClick = async (filmTitle, quality, linkNumber) => {
+        try {
+            // Use the full API URL but add log-download to the films path
+            const url = `${process.env.REACT_APP_API_URL}/log-download`;
+            console.log('Sending request to:', url); // Debug log
+            
+            await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.REACT_APP_API_KEY}` // Add API key if needed
+                },
+                body: JSON.stringify({
+                    title: filmTitle,
+                    quality: quality,
+                    link: `Link ${linkNumber}`
+                })
+            });
+        } catch (error) {
+            console.error('Error logging download:', error);
+        }
+    };
+
     const renderContent = () => {
         if (loading) {
             return <SkeletonLoader />;
@@ -197,6 +220,7 @@ const FilmDetail = () => {
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="download-btn"
+                                                        onClick={() => handleDownloadClick(film.Title, quality, i + 1)}
                                                     >
                                                         <DownloadIcon />
                                                         Link {i + 1}
@@ -268,6 +292,7 @@ const FilmDetail = () => {
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="download-btn"
+                                                onClick={() => handleDownloadClick(film.Title, quality, i + 1)}
                                             >
                                                 <DownloadIcon />
                                                 Link {i + 1}
